@@ -1,0 +1,31 @@
+#!/usr/bin/make -f
+PKG_VERSION := $(shell dpkg-parsechangelog -S Version | sed 's/~.*//')
+PKG_SOURCE  := $(shell jq -r '.name' composer.json)
+
+%:
+	dh $@
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_install:
+	mkdir -p debian/phpdocumentor/usr/lib/phpdocumentor
+	cp -r src debian/phpdocumentor/usr/lib/phpdocumentor/
+	cp -r config debian/phpdocumentor/usr/lib/phpdocumentor/
+	cp -r data debian/phpdocumentor/usr/lib/phpdocumentor/
+	rm -rf debian/phpdocumentor/usr/lib/phpdocumentor/data/website
+	rm -rf debian/phpdocumentor/usr/lib/phpdocumentor/data/asset-builder
+	rm -rf debian/phpdocumentor/usr/lib/phpdocumentor/data/examples
+	mkdir -p debian/phpdocumentor/usr/lib/phpdocumentor/vendor
+	install -m 644 debian/autoload.php debian/phpdocumentor/usr/lib/phpdocumentor/vendor/autoload.php
+	sed -i "1a defined('APP_NAME') || define('APP_NAME', '$(PKG_SOURCE)');" \
+	    debian/phpdocumentor/usr/lib/phpdocumentor/vendor/autoload.php
+	sed -i "s|'unknown'|'$(PKG_SOURCE)'|" \
+	    debian/phpdocumentor/usr/lib/phpdocumentor/vendor/autoload.php
+	sed -i "s|'0.0.0'|'$(PKG_VERSION)'|" \
+	    debian/phpdocumentor/usr/lib/phpdocumentor/vendor/autoload.php
+	sed -i "2a defined('APP_VERSION') || define('APP_VERSION', '$(PKG_VERSION)');" \
+	    debian/phpdocumentor/usr/lib/phpdocumentor/vendor/autoload.php
+	mkdir -p debian/phpdocumentor/usr/bin
+	install -m 755 debian/phpdoc debian/phpdocumentor/usr/bin/phpdoc
